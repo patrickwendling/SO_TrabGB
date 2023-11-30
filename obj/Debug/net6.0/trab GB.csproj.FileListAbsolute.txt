@@ -1,0 +1,15 @@
+C:\Users\pwendling\Desktop\trab GB\bin\Debug\net6.0\trab GB.exe
+C:\Users\pwendling\Desktop\trab GB\bin\Debug\net6.0\trab GB.deps.json
+C:\Users\pwendling\Desktop\trab GB\bin\Debug\net6.0\trab GB.runtimeconfig.json
+C:\Users\pwendling\Desktop\trab GB\bin\Debug\net6.0\trab GB.dll
+C:\Users\pwendling\Desktop\trab GB\bin\Debug\net6.0\trab GB.pdb
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.csproj.AssemblyReference.cache
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.AssemblyInfoInputs.cache
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.AssemblyInfo.cs
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.csproj.CoreCompileInputs.cache
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.dll
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\refint\trab GB.dll
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.pdb
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\trab GB.genruntimeconfig.cache
+C:\Users\pwendling\Desktop\trab GB\obj\Debug\net6.0\ref\trab GB.dll
