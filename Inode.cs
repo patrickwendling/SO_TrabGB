@@ -14,7 +14,7 @@ public class Inode
     public int size;
     public string absName;
     public List<string> blocks;
-    public List<string> indirSimp;
+    public List<Inode> indirSimp;
 
     public Inode(string name, string prop, bool isDir = false)
     {
@@ -24,7 +24,7 @@ public class Inode
         this.absName = name;
         this.rights = new List<string> { Utils.BinToStr(7), Utils.BinToStr(5), Utils.BinToStr(0) };
         this.blocks = isDir ? new List<string>() : Enumerable.Repeat(new byte[Utils.LEN_BLOCK], Utils.NUM_BLOCKS_INT).Select(b => BitConverter.ToString(b)).ToList();
-        this.indirSimp = new List<string>();
+        this.indirSimp = new List<Inode>();
     }
 
     public override string ToString()
@@ -49,9 +49,9 @@ public class Inode
         this.size = this.isDir ? this.blocks.Count() * 4 : this.blocks.Sum(b => Utils.StringToByteArray(b).Length - Utils.StringToByteArray(b).Count(c => c == '\x00')); 
         if (!this.isDir)
         {
-            foreach (string n in this.indirSimp)
+            foreach (Inode n in this.indirSimp)
             {
-                this.size += inodes[n].blocks.Sum(b => Utils.StringToByteArray(b).Length - Utils.StringToByteArray(b).Count(c => c == '\x00'));
+                this.size += inodes[n.absName].blocks.Sum(b => Utils.StringToByteArray(b).Length - Utils.StringToByteArray(b).Count(c => c == '\x00'));
             }
         }
     }

@@ -375,128 +375,130 @@ class Program
                 Console.WriteLine(u);
         }
 
-        // void Grava(string[] cmds)
-        // {
-        //     if (cmds.Length != 5) {
-        //         Console.WriteLine(MSG_QTD_INV_PARAM);
-        //         return;
-        //     }
+        void Grava(string[] cmds)
+        {
+            if (cmds.Length != 5) {
+                Console.WriteLine(MSG_QTD_INV_PARAM);
+                return;
+            }
 
-        //     string nome = cmds[1];
-        //     string posicao = cmds[2];
-        //     string nbytes = cmds[3];
-        //     string buffer = cmds[4];
+            string nome = cmds[1];
+            string posicao = cmds[2];
+            string nbytes = cmds[3];
+            string buffer = cmds[4];
 
-        //     if (!int.TryParse(posicao, out int parsedPosicao) || !int.TryParse(nbytes, out int parsedNbytes)) {
-        //         Console.WriteLine(MSG_ARG_INV);
-        //         return;
-        //     }
+            if (!int.TryParse(posicao, out int parsedPosicao) || !int.TryParse(nbytes, out int parsedNbytes)) {
+                Console.WriteLine(MSG_ARG_INV);
+                return;
+            }
 
-        //     List<string> blocos = null;
-        //     List<Inode> blocosInd = null;
-        //     List<string> nomesInd = null;
+            List<string> blocos = null;
+            List<string> blocosInd = null;
+            List<Inode> nomesInd = null;
 
-        //     string nomeAbs = Utils.MontaPossivelNome(inode, nome);
+            string nomeAbs = Utils.MontaPossivelNome(inode, nome);
 
-        //     if (inodes.ContainsKey(nomeAbs) && !inodes[nomeAbs].isDir) {
-        //         if (inodes[nomeAbs].VerificaPermissao(user.id, Acao.ESCRITA)) {
-        //             blocos = inodes[nomeAbs].blocks;
-        //             nomesInd = inodes[nomeAbs].indirSimp;
-        //             blocosInd = new List<Inode>();
-        //             if (nomesInd != null) {
-        //                 foreach (var n in nomesInd) {
-        //                     blocosInd.Add(inodes[n]);
-        //                 }
-        //             }
-        //         }
-        //         else {
-        //             Console.WriteLine(MSG_PERM_INS);
-        //             return;
-        //         }
-        //     }
+            if (inodes.ContainsKey(nomeAbs) && !inodes[nomeAbs].isDir) {
+                if (inodes[nomeAbs].VerificaPermissao(user.id, Acao.ESCRITA)) {
+                    blocos = inodes[nomeAbs].blocks;
+                    nomesInd = inodes[nomeAbs].indirSimp;
+                    blocosInd = new List<string>();
+                    if (nomesInd != null) {
+                        foreach (var n in nomesInd) {
+                            foreach (var block in inodes[n.absName].blocks) {
+                                blocosInd.Add(block);
+                            }
+                        }
+                    }
+                }
+                else {
+                    Console.WriteLine(MSG_PERM_INS);
+                    return;
+                }
+            }
 
-        //     if (blocos == null || nomesInd == null) {
-        //         Console.WriteLine(MSG_ARQ_NAO_EXIST);
-        //         return;
-        //     }
+            if (blocos == null || nomesInd == null) {
+                Console.WriteLine(MSG_ARQ_NAO_EXIST);
+                return;
+            }
 
-        //     if (parsedPosicao > Utils.LEN_TOTAL)
-        //     {
-        //         Console.WriteLine(MSG_POS_OUT_DISCO);
-        //         return;
-        //     }
+            if (parsedPosicao > Utils.LEN_TOTAL)
+            {
+                Console.WriteLine(MSG_POS_OUT_DISCO);
+                return;
+            }
 
-        //     List<byte> bufferNumerico = buffer.Select(Convert.ToByte).ToList();
-        //     int tamParcial = Math.Min(buffer.Length, parsedNbytes);
-        //     int idxBoc = parsedPosicao / Utils.LEN_BLOCK;
-        //     int posBocInit = parsedPosicao - (idxBoc * Utils.LEN_BLOCK);
-        //     int offsetStrInit = 0;
-        //     int idxStr = 0;
-        //     int posStrInit = 0;
+            List<byte> bufferNumerico = buffer.Select(Convert.ToByte).ToList();
+            int tamParcial = Math.Min(buffer.Length, parsedNbytes);
+            int idxBoc = parsedPosicao / Utils.LEN_BLOCK;
+            int posBocInit = parsedPosicao - (idxBoc * Utils.LEN_BLOCK);
+            int offsetStrInit = 0;
+            int idxStr = 0;
+            int posStrInit = 0;
 
-        //     if (parsedPosicao + tamParcial > Utils.LEN_TOTAL)
-        //     {
-        //         Console.WriteLine("Block size is larger than the total size of the disk.");
-        //         return;
-        //     }
+            if (parsedPosicao + tamParcial > Utils.LEN_TOTAL)
+            {
+                Console.WriteLine("Block size is larger than the total size of the disk.");
+                return;
+            }
 
-        //     inodes[nomeAbs].AtualizaDataAtualizacao();
+            inodes[nomeAbs].AtualizaDataAtualizacao();
 
-        //     while (true)
-        //     {
-        //         if (idxBoc < Utils.NUM_BLOCKS_INT)
-        //         {
-        //             if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
-        //             {
-        //                 Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, tamParcial);
-        //                 break;
-        //             }
-        //             else
-        //             {
-        //                 Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
-        //                 tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
-        //                 idxBoc++;
-        //                 posBocInit = 0;
-        //                 idxStr++;
-        //                 posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
-        //             }
-        //         }
-        //         else if (idxBoc >= Utils.NUM_BLOCKS_INT && idxBoc < Utils.NUM_BLOCKS_INT + Utils.NUM_MAX_BLOCKS_IND)
-        //         {
-        //             int idxBocInd = idxBoc - Utils.NUM_BLOCKS_INT;
-        //             string nomeInd = Utils.MontaNomePadraoBlocoIndireto(nomeAbs, idxBocInd);
-        //             if (!nomesInd.Contains(nomeInd))
-        //             {
-        //                 nomesInd.Add(nomeInd);
-        //                 blocosInd.Add(new byte[Utils.LEN_BLOCK]);
-        //             }
+            while (true)
+            {
+                if (idxBoc < Utils.NUM_BLOCKS_INT)
+                {
+                    if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
+                    {
+                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, tamParcial);
+                        break;
+                    }
+                    else
+                    {
+                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
+                        tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
+                        idxBoc++;
+                        posBocInit = 0;
+                        idxStr++;
+                        posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
+                    }
+                }
+                else if (idxBoc >= Utils.NUM_BLOCKS_INT && idxBoc < Utils.NUM_BLOCKS_INT + Utils.NUM_MAX_BLOCKS_IND)
+                {
+                    int idxBocInd = idxBoc - Utils.NUM_BLOCKS_INT;
+                    string nomeInd = Utils.MontaNomePadraoBlocoIndireto(nomeAbs, idxBocInd);
+                    if (!nomesInd.Contains(nomeInd))
+                    {
+                        nomesInd.Add(nomeInd);
+                        blocosInd.Add(new byte[Utils.LEN_BLOCK]);
+                    }
 
-        //             if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
-        //             {
-        //                 Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, tamParcial);
-        //                 for (int n = 0; n < nomesInd.Count; n++)
-        //                 {
-        //                     inodes[nomesInd[n]] = blocosInd[n].ToInode(); // Assuming ToInode() converts byte[] to Inode
-        //                 }
-        //                 break;
-        //             }
-        //             else
-        //             {
-        //                 Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
-        //                 tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
-        //                 idxBoc++;
-        //                 posBocInit = 0;
-        //                 idxStr++;
-        //                 posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             Console.WriteLine("File space exhausted!");
-        //             return;
-        //         }
-        //     }
-        // }
+                    if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
+                    {
+                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, tamParcial);
+                        for (int n = 0; n < nomesInd.Count; n++)
+                        {
+                            inodes[nomesInd[n]] = blocosInd[n].ToInode(); // Assuming ToInode() converts byte[] to Inode
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
+                        tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
+                        idxBoc++;
+                        posBocInit = 0;
+                        idxStr++;
+                        posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("File space exhausted!");
+                    return;
+                }
+            }
+        }
 
 
 
