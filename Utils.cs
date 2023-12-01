@@ -5,21 +5,33 @@ public static class Utils
     public const int NUM_BLOCKS_INT = 3;
     public const int NUM_MAX_BLOCKS_IND = 3;
     public const int LEN_TOTAL = LEN_BLOCK * (NUM_BLOCKS_INT + NUM_MAX_BLOCKS_IND);
-    
-    public static string Bin(int num)
+
+    public static string BinToStr(int bin)
     {
-        string binary = "";
-        for (int i = 31; i >= 0; i--)
-        {
-            int bit = num & (1 << i);
-            binary += bit == 0 ? "0" : "1"; 
-        }
-        return binary.TrimStart('0');
+        return Convert.ToString(bin, 2).PadLeft(3, '0');
     }
 
-    public static string BinToStrDireito(int dir)
+    public static byte[] StringToByteArray(string hex)
     {
-        return Convert.ToString(dir, 2).PadLeft(3, '0');
+        hex = hex.Replace("-", "");
+        byte[] byteArray = new byte[hex.Length / 2];
+
+        for (int i = 0; i < byteArray.Length; i++)
+        {
+            byteArray[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+        }
+
+        return byteArray;
+    }
+
+    public static string MontaPossivelNome(Inode inode, string nome)
+    {
+        return inode.absName == "/" ? inode.absName + nome : "/" + nome;
+    }
+
+    public static string MontaNomePadraoBlocoIndireto(string nomeAbs, int idxBocInd)
+    {
+        return nomeAbs + ".blocoInd" + idxBocInd.ToString();
     }
 }
 

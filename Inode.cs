@@ -6,54 +6,74 @@ public class Inode
 {
     public string prop;
     public string grupo;
-    public DateTime dtCri;
-    public DateTime dtAtu;
-    public DateTime dtUltAce;
-    public List<string> direitos;
-    public bool ehDir;
-    public int tamanho;
-    public string absNome;
-    public List<byte[]> blocos;
-    public List<int> indirSimp;
+    public DateTime dtCre;
+    public DateTime dtUpd;
+    public DateTime dtUltAcc;
+    public List<string> rights;
+    public bool isDir;
+    public int size;
+    public string absName;
+    public List<string> blocks;
+    public List<string> indirSimp;
 
-    public Inode(string nome, string prop, bool ehDir = false)
+    public Inode(string name, string prop, bool isDir = false)
     {
         this.prop = this.grupo = prop;
-        this.dtCri = this.dtAtu = this.dtUltAce = DateTime.Now;
-        this.ehDir = ehDir;
-        this.absNome = nome;
-        this.direitos = new List<string> { Convert.ToString(7, 2), Convert.ToString(5, 2), Convert.ToString(0, 2) };
-        this.blocos = this.ehDir ? new List<byte[]>() : Enumerable.Repeat(new byte[Utils.LEN_BLOCK], Utils.NUM_BLOCKS_INT).ToList();
-        this.indirSimp = new List<int>();
+        this.dtCre = this.dtUpd = this.dtUltAcc = DateTime.Now;
+        this.isDir = isDir;
+        this.absName = name;
+        this.rights = new List<string> { Utils.BinToStr(7), Utils.BinToStr(5), Utils.BinToStr(0) };
+        this.blocks = isDir ? new List<string>() : Enumerable.Repeat(new byte[Utils.LEN_BLOCK], Utils.NUM_BLOCKS_INT).Select(b => BitConverter.ToString(b)).ToList();
+        this.indirSimp = new List<string>();
     }
 
     public override string ToString()
     {
-        return $"{RelNome()}";
+        return $"{RelName()}";
     }
 
-    public string Info(Dictionary<string, User> listUser, Dictionary<Inode, byte[]> inodes)
+    public void AtualizaDataAtualizacao()
     {
-        AtualizaTamanho(inodes);
-        return $"{ToString()}  {'d' == (ehDir ? 'd' : 'f')}{NormalizaDireitos()}  {tamanho}  {(listUser.ContainsKey(prop) ? listUser[prop].login : prop)} {(listUser.ContainsKey(grupo) ? listUser[grupo].login : grupo)}";
+        this.dtUltAcc = this.dtUpd = DateTime.Now;
+    }
+
+    public void AtualizaDataAcesso()
+    {
+        this.dtUltAcc = DateTime.Now;
+    }
+
+    public void AtualizaSize(Dictionary<string, Inode> inodes)
+    {
+        // Console.WriteLine(this.blocks.Count());
+        // Console.WriteLine(this.blocks[0]);
+        this.size = this.isDir ? this.blocks.Count() * 4 : this.blocks.Sum(b => Utils.StringToByteArray(b).Length - Utils.StringToByteArray(b).Count(c => c == '\x00')); 
+        if (!this.isDir)
+        {
+            foreach (string n in this.indirSimp)
+            {
+                this.size += inodes[n].blocks.Sum(b => Utils.StringToByteArray(b).Length - Utils.StringToByteArray(b).Count(c => c == '\x00'));
+            }
+        }
+    }
+
+    public string Info(Dictionary<string, User> listUser, Dictionary<string, Inode> inodes)
+    {
+        AtualizaSize(inodes);
+        return $"{ToString()}  {(this.isDir ? 'd' : '-')}{NormalRights()}  {this.size}  {(listUser.ContainsKey(this.prop) ? listUser[this.prop].login : this.prop)} {(listUser.ContainsKey(this.grupo) ? listUser[this.grupo].login : this.grupo)}";
     }
 
     public string Data()
     {
-        return $"{ToString()}  {dtCri:yyyy-MM-dd HH:mm:ss}    {dtAtu:yyyy-MM-dd HH:mm:ss}    {dtUltAce:yyyy-MM-dd HH:mm:ss}";
+        return $"{ToString()}  {this.dtCre:yyyy-MM-dd HH:mm:ss}    {this.dtUpd:yyyy-MM-dd HH:mm:ss}    {this.dtUltAcc:yyyy-MM-dd HH:mm:ss}";
     }
 
-    public string NormalizaDireitos()
+    public string NormalRights()
     {
         string padrao = "rwx";
-        StringBuilder saida = new StringBuilder();
+        StringBuilder saida = new();
 
-        foreach (string dir in direitos)
-        {
-            string strDir = Utils.BinToStrDireito(Convert.ToInt32(dir, 2));
-
-            for (int i = 0; i < strDir.Length; i++)
-            {
+        foreach (string strDir in this.rights) {
+            for (int i = 0; i < strDir.Length; i++) {
                 saida.Append(strDir[i] == '1' ? padrao[i] : '-');
             }
         }
@@ -61,58 +81,45 @@ public class Inode
         return saida.ToString();
     }
 
-    public void SetaDireito(List<int> novosDireitos)
+    public void SetaDireito(string rights)
     {
-        direitos = novosDireitos.Select(i => Convert.ToString(i, 2)).ToList();
+        List<string> newRights = new();
+        for (int i = 0; i < rights.Length; i++) {
+            newRights.Add(Utils.BinToStr(Convert.ToInt32(rights[i].ToString())));
+        }
+        this.rights = newRights;
     }
 
     public void Formata()
     {
-        blocos = ehDir ? new List<byte[]>() : Enumerable.Repeat(new byte[Utils.LEN_BLOCK], Utils.NUM_BLOCKS_INT).ToList();
-    }
-
-    public void AtualizaTamanho(Dictionary<Inode, byte[]> inodes)
-    {
-        tamanho = ehDir ? blocos.Count * 4 : blocos.Sum(b => b.Length - Array.FindAll(b, x => x == 0x00).Length);
-        if (!ehDir)
-        {
-            foreach (int n in indirSimp)
-            {
-                tamanho += inodes[this].Length - Array.FindAll(inodes[this], x => x == 0x00).Length;
-            }
-        }
+        this.blocks = this.isDir ? new List<string>() : Enumerable.Repeat(new byte[Utils.LEN_BLOCK], Utils.NUM_BLOCKS_INT).Select(b => BitConverter.ToString(b)).ToList();
     }
 
     public string Pai()
     {
-        if ("/" == absNome)
+        if ("/" == this.absName)
         {
             return null;
         }
 
-        int ridx = absNome.LastIndexOf("/", 0, absNome.Length - 1);
-        return ridx != 0 ? absNome.Substring(0, ridx) : absNome[0].ToString();
+        int ridx = this.absName.LastIndexOf("/", 0);
+        return ridx != 0 ? this.absName.Substring(0, ridx) : this.absName[0].ToString();
     }
 
-    public string RelNome()
+    public string RelName()
     {
-        return absNome != "/" ? absNome.Substring(absNome.LastIndexOf("/", 0, absNome.Length - 1) + 1) : "/";
+        if ("/" != this.absName) {
+            int index = this.absName.LastIndexOf("/", 0) + 1;
+            return this.absName.Substring(index);
+        }
+        else {
+            return "/";
+        }
     }
 
-    public bool VerificaPermissao(string userId, Acao acao)
-    {
-        return (Utils.BinToStrDireito(Convert.ToInt32(direitos[(int)Agente.GERAL]))[Convert.ToInt32(acao)] != '0')
-            || (grupo == userId && Utils.BinToStrDireito(Convert.ToInt32(direitos[(int)Agente.GRUPO]))[Convert.ToInt32(acao)] != '0')
-            || (prop == userId && Utils.BinToStrDireito(Convert.ToInt32(direitos[(int)Agente.PROPRIETARIO]))[Convert.ToInt32(acao)] != '0');
-    }
-
-    public void AtualizaDataAtualizacao()
-    {
-        dtUltAce = dtAtu = DateTime.Now;
-    }
-
-    public void AtualizaDataAcesso()
-    {
-        dtUltAce = DateTime.Now;
+    public bool VerificaPermissao(string userId, Acao acao) {
+        return ((this.rights[(int)Agente.GERAL])[Convert.ToInt32(acao)] != '0')
+            || (this.grupo == userId && (this.rights[(int)Agente.GRUPO])[Convert.ToInt32(acao)] != '0')
+            || (this.prop == userId && (this.rights[(int)Agente.PROPRIETARIO])[Convert.ToInt32(acao)] != '0');
     }
 }

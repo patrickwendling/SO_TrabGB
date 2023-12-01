@@ -1,15 +1,19 @@
 namespace trab_GB;
 public class User
 {
-    private static int countId = 0;
-    public User(string login, string pass = "")
+    public User(string id, string login, string pass = "")
     {
-        this.id = countId++;
+        this.id = id;
         this.login = login;
         this.password = pass;
     }
     
-    public int id { get; set; }
+    public string id { get; set; }
     public string login { get; set; }
     public string password { get; set;}
+
+    public override string ToString()
+    {
+        return $"Id: {this.id } - Login: {this.login}";
+    }
 }
