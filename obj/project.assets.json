@@ -8,19 +8,19 @@
     "net6.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Patrick\\.nuget\\packages\\": {}
+    "C:\\Users\\pwendling\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Patrick\\Desktop\\so\\SO_TrabGB\\trab GB.csproj",
+      "projectUniqueName": "C:\\Users\\pwendling\\Desktop\\trabb\\SO_TrabGB\\trab GB.csproj",
       "projectName": "trab GB",
-      "projectPath": "C:\\Users\\Patrick\\Desktop\\so\\SO_TrabGB\\trab GB.csproj",
-      "packagesPath": "C:\\Users\\Patrick\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Patrick\\Desktop\\so\\SO_TrabGB\\obj\\",
+      "projectPath": "C:\\Users\\pwendling\\Desktop\\trabb\\SO_TrabGB\\trab GB.csproj",
+      "packagesPath": "C:\\Users\\pwendling\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\pwendling\\Desktop\\trabb\\SO_TrabGB\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Patrick\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\pwendling\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -51,7 +51,8 @@
           "net47",
           "net471",
           "net472",
-          "net48"
+          "net48",
+          "net481"
         ],
         "assetTargetFallback": true,
         "warn": true,
@@ -60,7 +61,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.320\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.413\\RuntimeIdentifierGraph.json"
       }
     }
   }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using static trab_GB.Enums;
 
 namespace trab_GB;
@@ -394,20 +395,16 @@ class Program
 
             List<string> blocos = null;
             List<string> blocosInd = null;
-            List<Inode> nomesInd = null;
 
             string nomeAbs = Utils.MontaPossivelNome(inode, nome);
 
             if (inodes.ContainsKey(nomeAbs) && !inodes[nomeAbs].isDir) {
                 if (inodes[nomeAbs].VerificaPermissao(user.id, Acao.ESCRITA)) {
                     blocos = inodes[nomeAbs].blocks;
-                    nomesInd = inodes[nomeAbs].indirSimp;
                     blocosInd = new List<string>();
-                    if (nomesInd != null) {
-                        foreach (var n in nomesInd) {
-                            foreach (var block in inodes[n.absName].blocks) {
-                                blocosInd.Add(block);
-                            }
+                    foreach (var dirBloc in inodes[nomeAbs].indirSimp) {
+                        foreach (var block in dirBloc) {
+                            blocosInd.Add(block);
                         }
                     }
                 }
@@ -417,7 +414,7 @@ class Program
                 }
             }
 
-            if (blocos == null || nomesInd == null) {
+            if (blocos == null) {
                 Console.WriteLine(MSG_ARQ_NAO_EXIST);
                 return;
             }
@@ -428,111 +425,110 @@ class Program
                 return;
             }
 
-            List<byte> bufferNumerico = buffer.Select(Convert.ToByte).ToList();
-            int tamParcial = Math.Min(buffer.Length, parsedNbytes);
-            int idxBoc = parsedPosicao / Utils.LEN_BLOCK;
-            int posBocInit = parsedPosicao - (idxBoc * Utils.LEN_BLOCK);
-            int offsetStrInit = 0;
-            int idxStr = 0;
-            int posStrInit = 0;
-
-            if (parsedPosicao + tamParcial > Utils.LEN_TOTAL)
-            {
-                Console.WriteLine("Block size is larger than the total size of the disk.");
-                return;
+            if (buffer.Length != parsedNbytes){
+                Console.WriteLine(MSG_ARG_INV);
             }
+
+            Byte[] bufferNumerico = Encoding.ASCII.GetBytes(buffer);
+            int idxBlocoInit = parsedPosicao >= Utils.LEN_BLOCK ? parsedPosicao / Utils.LEN_BLOCK : 0;
+            int idxByteInit = parsedPosicao >= Utils.LEN_BLOCK ? parsedPosicao % Utils.LEN_BLOCK : parsedPosicao;
+            int idxBloco = 0;
+            int idxByte = 0;
+            int countBytes = 0;
+
+            // if (parsedPosicao + tamParcial > Utils.LEN_TOTAL)
+            // {
+            //     Console.WriteLine("Block size is larger than the total size of the disk.");
+            //     return;
+            // }
 
             inodes[nomeAbs].AtualizaDataAtualizacao();
 
             while (true)
             {
-                if (idxBoc < Utils.NUM_BLOCKS_INT)
+                if (idxBlocoInit < Utils.NUM_BLOCKS_INT)
                 {
-                    if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
+                    while (true)
                     {
-                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, tamParcial);
-                        break;
-                    }
-                    else
-                    {
-                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocos[idxBoc], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
-                        tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
-                        idxBoc++;
-                        posBocInit = 0;
-                        idxStr++;
-                        posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
-                    }
-                }
-                else if (idxBoc >= Utils.NUM_BLOCKS_INT && idxBoc < Utils.NUM_BLOCKS_INT + Utils.NUM_MAX_BLOCKS_IND)
-                {
-                    int idxBocInd = idxBoc - Utils.NUM_BLOCKS_INT;
-                    string nomeInd = Utils.MontaNomePadraoBlocoIndireto(nomeAbs, idxBocInd);
-                    if (!nomesInd.Contains(nomeInd))
-                    {
-                        nomesInd.Add(nomeInd);
-                        blocosInd.Add(new byte[Utils.LEN_BLOCK]);
-                    }
+                        var strToSave = inodes[nomeAbs].blocks[idxBlocoInit];
+                        var strToSaveBin = Utils.StringToByteArray(strToSave); 
 
-                    if (posBocInit + tamParcial <= Utils.LEN_BLOCK)
-                    {
-                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, tamParcial);
-                        for (int n = 0; n < nomesInd.Count; n++)
+                        while (true)
                         {
-                            inodes[nomesInd[n]] = blocosInd[n].ToInode(); // Assuming ToInode() converts byte[] to Inode
+                            strToSaveBin[idxByteInit++] = bufferNumerico[countBytes++];
+
+                            if (countBytes == parsedNbytes) {
+                                inodes[nomeAbs].blocks[idxBlocoInit] = BitConverter.ToString(strToSaveBin);
+                                break;
+                            }
+
+                            if (idxByteInit == Utils.LEN_BLOCK) {
+                                idxByteInit = 0;
+                                inodes[nomeAbs].blocks[idxBlocoInit] = BitConverter.ToString(strToSaveBin);
+                                break;
+                            }  
                         }
+
+                        idxBlocoInit++;
+
+                        if (countBytes == parsedNbytes || idxBlocoInit == Utils.NUM_BLOCKS_INT)
+                                break;
+                    }
+                } else{
+                    if (inodes[nomeAbs].indirSimp == null)
+                        inodes[nomeAbs].indirSimp = new();
+
                         break;
-                    }
-                    else
-                    {
-                        Array.Copy(bufferNumerico.ToArray(), posStrInit, blocosInd[idxBocInd], posBocInit, Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit);
-                        tamParcial -= Math.Min(tamParcial, Utils.LEN_BLOCK) - posBocInit;
-                        idxBoc++;
-                        posBocInit = 0;
-                        idxStr++;
-                        posStrInit = idxStr * Utils.LEN_BLOCK - offsetStrInit;
-                    }
                 }
-                else
-                {
-                    Console.WriteLine("File space exhausted!");
-                    return;
-                }
+
+                if (countBytes == parsedNbytes)
+                    break;
             }
         }
 
 
+        void Cat(string[] cmds)
+        {
+            if (cmds.Length == 2) {
+                string nome = Utils.MontaPossivelNome(inode, cmds[1]);
 
-        // void Cat(string[] cmds)
-        // {
-        //     if (cmds.Length == 2) {
-        //         string nome = Utils.MontaPossivelNome(inode, cmds[1]);
+                if (inodes.ContainsKey(nome) && !inodes[nome].isDir) {
+                    if (inodes[nome].VerificaPermissao(user.id, Acao.LEITURA)) {
+                        StringBuilder dataAscii = new();
+                        foreach(string s in inodes[nome].blocks)
+                        {
+                            dataAscii.Append(Encoding.ASCII.GetString(Utils.StringToByteArray(s)));
+                        }
 
-        //         if (inodes.ContainsKey(nome) && !inodes[nome].isDir) {
-        //             if (inodes[nome].VerificaPermissao(user.id, Acao.LEITURA)) {
-        //                 string strBlocosInt = string.Concat(inodes[nome].blocks.Select(bloco => string.Concat(bloco.Select(b => (char)b))));
+                        if (inodes[nome].indirSimp.Count() > 0) {
+                            var blocksInd = inodes[nome].indirSimp;
+                            foreach(List<string> lis in blocksInd) {
+                                if (lis != null && lis.Count() > 0) {
+                                    foreach (string s in lis) {
+                                        dataAscii.Append(Encoding.ASCII.GetString(Utils.StringToByteArray(s)));
+                                    }
+                                }
+                            }
+                        }
 
-        //                 foreach (var n in inodes[nome].indirSimp) {
-        //                     strBlocosInt += string.Concat(inodes[n].Select(c => (char)c));
-        //                 }
-
-        //                 Console.WriteLine(strBlocosInt);
-        //                 inodes[nome].AtualizaDataAcesso();
-        //             }
-        //             else {
-        //                 Console.WriteLine(MSG_PERM_INS);
-        //                 return;
-        //             }
-        //         }
-        //         else {
-        //             Console.WriteLine(MSG_ARQ_NAO_EXIST);
-        //             return;
-        //         }
-        //     }
-        //     else {
-        //         Console.WriteLine(MSG_QTD_INV_PARAM);
-        //         return;
-        //     }
-        // }
+                        Console.WriteLine(dataAscii);
+                        inodes[nome].AtualizaDataAcesso();
+                    }
+                    else {
+                        Console.WriteLine(MSG_PERM_INS);
+                        return;
+                    }
+                }
+                else {
+                    Console.WriteLine(MSG_ARQ_NAO_EXIST);
+                    return;
+                }
+            }
+            else {
+                Console.WriteLine(MSG_QTD_INV_PARAM);
+                return;
+            }
+        }
 
         void Formata(string[] cmds)
         {
@@ -655,10 +651,10 @@ class Program
                 LsUser();
             else if (cmds[0] == "rmuser")
                 RmUser(cmds);
-            // else if (cmds[0] == "grava")
-            //     Grava(cmds);
-            // else if (cmds[0] == "cat")
-            //     Cat(cmds);
+            else if (cmds[0] == "grava")
+                Grava(cmds);
+            else if (cmds[0] == "cat")
+                Cat(cmds);
             else if (cmds[0] == "formata")
                 Formata(cmds);
             else if (cmds[0] == "login")
